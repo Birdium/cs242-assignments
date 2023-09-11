@@ -23,7 +23,64 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
 
   (* Add more cases here! *)
 
-  | _ -> raise Unimplemented
+  | Expr.True -> Ok Type.Bool
+  | Expr.False -> Ok Type.Bool
+
+  | Expr.If {cond; then_; else_} ->
+    typecheck_expr ctx cond >>= fun tau_cond -> 
+    typecheck_expr ctx then_ >>= fun tau_then ->
+    typecheck_expr ctx else_ >>= fun tau_else -> 
+    (match (tau_cond, tau_then, tau_else) with 
+     | (Type.Bool, tau1, tau2) when tau1 = tau2 -> Ok tau1
+     | _ -> Error (
+      if tau_cond = Type.Bool then
+        Printf.sprintf
+          "If condition expression has type: (%s : %s) but was expected of type bool"
+          (Expr.to_string cond) (Type.to_string tau_cond)
+      else
+        Printf.sprintf
+          "If operands have incompatible types: (%s : %s) and (%s : %s)"
+          (Expr.to_string then_) (Type.to_string tau_then)
+          (Expr.to_string else_) (Type.to_string tau_else)
+     ))
+  
+  | Expr.Relop {left; right; _} ->
+    typecheck_expr ctx left >>= fun tau_left ->
+    typecheck_expr ctx right >>= fun tau_right ->
+    (match (tau_left, tau_right) with
+     | (Type.Num, Type.Num) -> Ok Type.Bool
+     | _ -> Error (
+       Printf.sprintf
+         "Relop operands have incompatible types: (%s : %s) and (%s : %s)"
+         (Expr.to_string left) (Type.to_string tau_left)
+         (Expr.to_string right) (Type.to_string tau_right)))
+
+  
+  | Expr.And {left; right} ->
+    typecheck_expr ctx left >>= fun tau_left ->
+    typecheck_expr ctx right >>= fun tau_right ->
+    (match (tau_left, tau_right) with
+     | (Type.Bool, Type.Bool) -> Ok Type.Bool
+     | _ -> Error (
+       Printf.sprintf
+         "And operands have incompatible types: (%s : %s) and (%s : %s)"
+         (Expr.to_string left) (Type.to_string tau_left)
+         (Expr.to_string right) (Type.to_string tau_right)))
+
+  | Expr.Or {left; right} ->
+    typecheck_expr ctx left >>= fun tau_left ->
+    typecheck_expr ctx right >>= fun tau_right ->
+    (match (tau_left, tau_right) with
+     | (Type.Bool, Type.Bool) -> Ok Type.Bool
+     | _ -> Error (
+       Printf.sprintf
+         "Or operands have incompatible types: (%s : %s) and (%s : %s)"
+         (Expr.to_string left) (Type.to_string tau_left)
+         (Expr.to_string right) (Type.to_string tau_right)))
+
+  | _ -> 
+    Printf.sprintf "%s" (Expr.to_string e); 
+    raise Unimplemented
 
 let typecheck t = typecheck_expr String.Map.empty t
 
