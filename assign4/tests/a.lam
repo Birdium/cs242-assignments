@@ -1,0 +1,1 @@
+((fun (n : num) -> ((fun (t : num * num) -> t.L + t.R) (n, n + 1))) 1 + 2)
