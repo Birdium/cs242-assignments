@@ -1,7 +1,7 @@
 z = fun f -> fun x -> x
 s = fun n -> fun f -> fun x -> f (n f x)
 plus = fun m -> fun n -> m s n
-mult = fun m -> fun n -> (* fill this in - tests are below *)
+mult = fun m -> fun n -> (m (plus n) z)
 
 mult z z
 mult (s z) (s z)
