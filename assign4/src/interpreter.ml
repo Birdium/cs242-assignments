@@ -25,6 +25,41 @@ let rec trystep (e : Expr.t) : outcome =
     in
     Step (Expr.Num (f n1 n2) )
 
+  | Expr.If {cond; then_; else_} -> 
+    
+    Printf.printf "1";
+    (cond, fun cond' -> Expr.If {cond = cond'; then_; else_;}) |-> fun () ->
+    if cond = Expr.True then Step then_
+    else Step else_ 
+
+  | Expr.Relop {relop; left; right} -> 
+    (left, fun left' -> Expr.Relop {left = left'; relop; right;}) |-> fun () ->
+    (right, (fun right' -> Expr.Relop {right = right'; relop; left})) |-> fun () ->
+    let (Expr.Num n1, Expr.Num n2) = (left, right) in
+    let r = match relop with
+      | Expr.Lt -> (<)
+      | Expr.Gt -> (>)
+      | Expr.Eq -> (=)
+    in 
+    Step (if (r n1 n2) then Expr.True else Expr.False)
+
+  | Expr.And {left; right} -> 
+    (left, fun left' -> Expr.And {left = left'; right;}) |-> fun () ->
+    if left = Expr.False then 
+      Step left
+    else 
+      (right, fun right' -> Expr.And {right = right'; left}) |-> fun () ->
+        Step right
+  
+  | Expr.Or {left; right} -> 
+    (left, fun left' -> Expr.Or {left = left'; right;}) |-> fun () ->
+    if left = Expr.True then 
+      Step left
+    else 
+      (right, fun right' -> Expr.Or {right = right'; left}) |-> fun () ->
+        Step right
+
+
   (* Add more cases here! *)
 
   | _ -> raise (RuntimeError (

@@ -54,7 +54,6 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
          "Relop operands have incompatible types: (%s : %s) and (%s : %s)"
          (Expr.to_string left) (Type.to_string tau_left)
          (Expr.to_string right) (Type.to_string tau_right)))
-
   
   | Expr.And {left; right} ->
     typecheck_expr ctx left >>= fun tau_left ->
@@ -79,7 +78,7 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
          (Expr.to_string right) (Type.to_string tau_right)))
 
   | _ -> 
-    Printf.sprintf "%s" (Expr.to_string e); 
+    (* Printf.sprintf "%s" (Expr.to_string e);  *)
     raise Unimplemented
 
 let typecheck t = typecheck_expr String.Map.empty t
