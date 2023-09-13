@@ -12,6 +12,7 @@ module Type = struct
     match tau with
     | Num -> Num
     (* Add more cases here! *)
+    | Bool -> Bool
     | _ -> raise Unimplemented
 
   let substitute (x : string) (tau' : t) (tau : t) : t =
@@ -21,6 +22,7 @@ module Type = struct
     let rec aux (depth : int String.Map.t) (tau : t) : t =
       match tau with
       | Num -> Num
+      | Bool -> Bool
       (* Add more cases here! *)
       | _ -> raise Unimplemented
     in
@@ -87,6 +89,22 @@ module Expr = struct
       left = substitute_map rename left;
       right = substitute_map rename right}
     (* Put more cases here! *)
+    | True -> e
+    | False -> e
+    | If {cond; then_; else_} -> If {
+      cond = substitute_map rename cond;
+      then_ = substitute_map rename then_;
+      else_ = substitute_map rename else_}
+    | Relop {relop; left; right} -> Relop {
+      relop;
+      left = substitute_map rename left;
+      right = substitute_map rename right}
+    | And {left; right} -> And {
+      left = substitute_map rename left;
+      right = substitute_map rename right}
+    | Or {left; right} -> Or {
+      left = substitute_map rename left;
+      right = substitute_map rename right}
     | _ -> raise Unimplemented
 
   let substitute (x : string) (e' : t) (e : t) : t =
@@ -98,7 +116,17 @@ module Expr = struct
       | Num _ -> e
       | Binop {binop; left; right} -> Binop {
         binop; left = aux depth left; right = aux depth right}
-      (* Add more cases here! *)
+        (* Add more cases here! *)
+      | True -> e
+      | False -> e
+      | If {cond; then_; else_} -> If {
+        cond = aux depth cond; then_ = aux depth then_; else_ = aux depth else_}
+      | Relop {relop; left; right} -> Relop {
+        relop; left = aux depth left; right = aux depth right}
+      | And {left; right} -> And {
+        left = aux depth left; right = aux depth right}
+      | Or {left; right} -> Or {
+        left = aux depth left; right = aux depth right}
       | _ -> raise Unimplemented
     in
     aux String.Map.empty e

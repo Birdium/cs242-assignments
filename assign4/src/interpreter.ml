@@ -27,7 +27,6 @@ let rec trystep (e : Expr.t) : outcome =
 
   | Expr.If {cond; then_; else_} -> 
     
-    Printf.printf "1";
     (cond, fun cond' -> Expr.If {cond = cond'; then_; else_;}) |-> fun () ->
     if cond = Expr.True then Step then_
     else Step else_ 
