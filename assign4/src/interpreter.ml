@@ -58,7 +58,13 @@ let rec trystep (e : Expr.t) : outcome =
       (right, fun right' -> Expr.Or {right = right'; left}) |-> fun () ->
         Step right
 
-        
+  (* | Expr.Var variable ->  *)
+
+  | Expr.App {lam; arg} -> 
+    (lam, fun lam' -> Expr.App {lam = lam'; arg}) |-> fun () ->
+    let (x, tau, e) = lam in
+    substitute x e arg
+
   (* Add more cases here! *)
 
   | _ -> raise (RuntimeError (

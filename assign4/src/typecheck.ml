@@ -76,22 +76,27 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
          "Or operands have incompatible types: (%s : %s) and (%s : %s)"
          (Expr.to_string left) (Type.to_string tau_left)
          (Expr.to_string right) (Type.to_string tau_right)))
-(* 
-  | Expr.Var variable -> 
+
+  | Expr.Var variable -> (
     try 
       let var_ty = String.Map.find_exn ctx variable in
       Ok var_ty
     with
     | Not_found_s key_not_found -> 
       Error(
-        Print.sprintf
-        "Unbounded variable %s" variable
-      ) *)
+        Printf.sprintf
+        "Unbounded variable %s" variable)
+  )
 
   | Expr.Lam {x; tau; e} -> 
     let lctx = String.Map.add ctx ~key:x ~data:tau in
-    typecheck_expr lctx e >>= fun tau_e -> 
-      Ok(Type.Fn{arg = tau; ret = tau_e})
+    (match lctx with
+    | `Ok lctx -> 
+      typecheck_expr lctx e >>= fun tau_e -> 
+        Ok(Type.Fn{arg = tau; ret = tau_e})
+    | `Duplicate -> Error(
+      Printf.sprintf "Duplicate symbol %s" x)
+    )
   
   | Expr.App {lam; arg} ->
     typecheck_expr ctx lam >>= fun tau_lam ->
