@@ -58,7 +58,7 @@ let rec trystep (e : Expr.t) : outcome =
       (right, fun right' -> Expr.Or {right = right'; left}) |-> fun () ->
         Step right
 
-
+        
   (* Add more cases here! *)
 
   | _ -> raise (RuntimeError (

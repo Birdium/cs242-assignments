@@ -76,6 +76,39 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
          "Or operands have incompatible types: (%s : %s) and (%s : %s)"
          (Expr.to_string left) (Type.to_string tau_left)
          (Expr.to_string right) (Type.to_string tau_right)))
+(* 
+  | Expr.Var variable -> 
+    try 
+      let var_ty = String.Map.find_exn ctx variable in
+      Ok var_ty
+    with
+    | Not_found_s key_not_found -> 
+      Error(
+        Print.sprintf
+        "Unbounded variable %s" variable
+      ) *)
+
+  | Expr.Lam {x; tau; e} -> 
+    let lctx = String.Map.add ctx ~key:x ~data:tau in
+    typecheck_expr ctx e >>= fun tau_e -> 
+      Ok(Type.Fn{arg = tau; ret = tau_e})
+  
+  | Expr.App {lam; arg} ->
+    typecheck_expr ctx lam >>= fun tau_lam -> 
+    typecheck_expr ctx arg >>= fun tau_arg -> 
+    if Ast_util.Type.aequiv tau_lam.arg tau_arg then
+      Ok tau_lam.ret
+    else 
+      Error(
+        Print.sprintf
+        "Incompatible argument types: function: (%s %s), arg: (%s %s)" 
+        (Expr.to_string lam) (Type.to_string tau_lam)
+        (Expr.to_string arg) (Type.to_string tau_arg)
+      )
+
+
+  (* | Expr.Lam {x; tau; e} -> 
+    typecheck_expr  *)
 
   | _ -> 
     (* Printf.sprintf "%s" (Expr.to_string e);  *)
