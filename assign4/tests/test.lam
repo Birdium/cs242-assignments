@@ -1,0 +1,3 @@
+let n : num = 1 + 2 in
+let t : num * num = (n, n + 1) in
+t.L + t.R

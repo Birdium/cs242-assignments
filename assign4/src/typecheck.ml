@@ -90,25 +90,29 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
 
   | Expr.Lam {x; tau; e} -> 
     let lctx = String.Map.add ctx ~key:x ~data:tau in
-    typecheck_expr ctx e >>= fun tau_e -> 
+    typecheck_expr lctx e >>= fun tau_e -> 
       Ok(Type.Fn{arg = tau; ret = tau_e})
   
   | Expr.App {lam; arg} ->
-    typecheck_expr ctx lam >>= fun tau_lam -> 
-    typecheck_expr ctx arg >>= fun tau_arg -> 
-    if Ast_util.Type.aequiv tau_lam.arg tau_arg then
-      Ok tau_lam.ret
-    else 
+    typecheck_expr ctx lam >>= fun tau_lam ->
+    typecheck_expr ctx arg >>= fun tau_arg ->
+    (match tau_lam with
+    | Type.Fn {arg = fn_arg; ret = fn_ret} ->
+      if Ast_util.Type.aequiv fn_arg tau_arg then
+        Ok fn_ret
+      else 
+        Error(
+          Printf.sprintf
+          "Incompatible argument types: function: (%s %s), arg: (%s %s)" 
+          (Expr.to_string lam) (Type.to_string tau_lam)
+          (Expr.to_string arg) (Type.to_string tau_arg)
+        )
+    | _ -> 
       Error(
-        Print.sprintf
-        "Incompatible argument types: function: (%s %s), arg: (%s %s)" 
-        (Expr.to_string lam) (Type.to_string tau_lam)
-        (Expr.to_string arg) (Type.to_string tau_arg)
+        Printf.sprintf
+        "(%s, %s) is not a function" (Expr.to_string lam) (Type.to_string tau_lam)
       )
-
-
-  (* | Expr.Lam {x; tau; e} -> 
-    typecheck_expr  *)
+    )
 
   | _ -> 
     (* Printf.sprintf "%s" (Expr.to_string e);  *)
