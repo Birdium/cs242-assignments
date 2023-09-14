@@ -43,6 +43,8 @@ module Type = struct
         let incremented_map = increment_depth depth in 
         String.Map.set increment_depth ~key:x ~data:x.arg
       } *)
+      | Unit -> Unit
+      | Product {left; right} -> Product {left; right} 
       | _ -> 
         (* Printf.printf "%s\n" (to_string tau);  *)
         raise Unimplemented
@@ -141,6 +143,15 @@ module Expr = struct
     | App {lam; arg} -> App {
       lam = substitute_map rename lam;
       arg = substitute_map rename arg}
+    | Unit -> e
+    | Pair {left;right} -> Pair {
+      left = substitute_map rename left;
+      right = substitute_map rename right
+    }
+    | Project {e;d} -> Project {
+      e = substitute_map rename e;
+      d = d;
+    }
 
     | _ -> raise Unimplemented
 

@@ -67,6 +67,14 @@ let rec trystep (e : Expr.t) : outcome =
       Step (Ast_util.Expr.substitute x arg e))
     (* let Expr.Lam {x; tau; e} = lam in
     Step (Ast_util.Expr.substitute x arg e) *)
+  
+  | Expr.Project {e; d} -> 
+    (e, fun e' -> Expr.Project {e = e'; d}) |-> fun () ->
+    let Expr.Pair {left; right} = e in
+    (match d with 
+    | Left -> Step left
+    | Right -> Step right
+    )
 
   (* Add more cases here! *)
 

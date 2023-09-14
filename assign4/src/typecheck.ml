@@ -107,12 +107,31 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
           (Expr.to_string lam) (Type.to_string tau_lam)
           (Expr.to_string arg) (Type.to_string tau_arg)
         )
-    | _ -> 
-      Error(
-        Printf.sprintf
-        "(%s, %s) is not a function" (Expr.to_string lam) (Type.to_string tau_lam)
-      )
+    | _ -> Error(
+      Printf.sprintf
+      "(%s, %s) is not a function" (Expr.to_string lam) (Type.to_string tau_lam)
     )
+    )
+  
+  | Expr.Unit -> Ok Type.Unit
+  | Expr.Pair {left; right} -> 
+    typecheck_expr ctx left >>= fun tau_left -> 
+    typecheck_expr ctx right >>= fun tau_right -> 
+      Ok (Type.Product {left = tau_left; right = tau_right})
+  | Expr.Project {e; d} -> 
+    typecheck_expr ctx e >>= fun tau_e -> 
+     (match tau_e with
+      | Product{left; right} -> 
+        (match d with 
+        | Left -> Ok left
+        | Right -> Ok right
+        )
+      | _ -> Error(
+        Printf.sprintf
+        "expression (%s %s) doesn't have product type"
+        (Expr.to_string e) (Type.to_string tau_e)
+      )
+     )
 
   | _ -> 
     (* Printf.sprintf "%s" (Expr.to_string e);  *)
