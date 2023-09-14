@@ -24,7 +24,28 @@ module Type = struct
       | Num -> Num
       | Bool -> Bool
       (* Add more cases here! *)
-      | _ -> raise Unimplemented
+      | Fn x -> Fn x
+      (* | Var x ->
+        try 
+          let d = String.Map.find depth x in
+          Var (Int.to_string d)
+        with
+        | Not_found -> Var x 
+      | Fn x -> Fn {
+        let increment_depth map = 
+          String.Map.fold
+          ~init:String.Map.empty
+          ~f:(fun key value updated_map -> 
+            let updated_value = value + 1 in
+            String.Map.add updated_map ~key ~data:updated_value) 
+          map 
+        in  
+        let incremented_map = increment_depth depth in 
+        String.Map.set increment_depth ~key:x ~data:x.arg
+      } *)
+      | _ -> 
+        (* Printf.printf "%s\n" (to_string tau);  *)
+        raise Unimplemented
     in
     aux String.Map.empty tau
 
@@ -113,13 +134,9 @@ module Expr = struct
     | Lam {x; tau; e} -> 
       let fr = fresh x in
       let x' = Var(fr) in
-      let nrename = String.Map.add rename ~key:x ~data:x' in
-      let new_e = 
-        (match nrename with
-        | `Ok nrename -> substitute_map nrename e
-        | `Duplicate -> substitute_map rename e)
-      in
-      Printf.printf "%s %s\n" fr (to_string new_e);
+      let nrename = String.Map.set rename ~key:x ~data:x' in
+      let new_e = substitute_map nrename e in
+      (* Printf.printf "%s %s\n" fr (to_string new_e); *)
       Lam {x = fr; tau = tau; e = new_e}
     | App {lam; arg} -> App {
       lam = substitute_map rename lam;
@@ -128,7 +145,7 @@ module Expr = struct
     | _ -> raise Unimplemented
 
   let substitute (x : string) (e' : t) (e : t) : t =
-    Printf.printf "%s %s %s\n" x (to_string e') (to_string e);
+    (* Printf.printf "%s %s %s\n" x (to_string e') (to_string e); *)
     substitute_map (String.Map.singleton x e') e
 
   let rec to_debruijn (e : t) : t =

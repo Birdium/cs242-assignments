@@ -62,8 +62,11 @@ let rec trystep (e : Expr.t) : outcome =
 
   | Expr.App {lam; arg} -> 
     (lam, fun lam' -> Expr.App {lam = lam'; arg}) |-> fun () ->
-    let Expr.Lam {x; tau; e} = lam in
-    Step (Ast_util.Expr.substitute x e arg)
+    (match lam with 
+    | Expr.Lam {x; tau; e} -> 
+      Step (Ast_util.Expr.substitute x arg e))
+    (* let Expr.Lam {x; tau; e} = lam in
+    Step (Ast_util.Expr.substitute x arg e) *)
 
   (* Add more cases here! *)
 
