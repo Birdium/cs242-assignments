@@ -1,2 +1,4 @@
 let x : num = 1 in 
-x 
+let y : num = 2 in
+let z : num = 3 in
+x + y + z

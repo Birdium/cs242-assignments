@@ -105,9 +105,30 @@ module Expr = struct
     | Or {left; right} -> Or {
       left = substitute_map rename left;
       right = substitute_map rename right}
+    | Var variable -> 
+      let var_opt = String.Map.find rename variable in
+      (match var_opt with
+      | Some var -> var
+      | None -> e)
+    | Lam {x; tau; e} -> 
+      let fr = fresh x in
+      let x' = Var(fr) in
+      let nrename = String.Map.add rename ~key:x ~data:x' in
+      let new_e = 
+        (match nrename with
+        | `Ok nrename -> substitute_map nrename e
+        | `Duplicate -> substitute_map rename e)
+      in
+      Printf.printf "%s %s\n" fr (to_string new_e);
+      Lam {x = fr; tau = tau; e = new_e}
+    | App {lam; arg} -> App {
+      lam = substitute_map rename lam;
+      arg = substitute_map rename arg}
+
     | _ -> raise Unimplemented
 
   let substitute (x : string) (e' : t) (e : t) : t =
+    Printf.printf "%s %s %s\n" x (to_string e') (to_string e);
     substitute_map (String.Map.singleton x e') e
 
   let rec to_debruijn (e : t) : t =
