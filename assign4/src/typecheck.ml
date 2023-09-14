@@ -89,14 +89,9 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
   )
 
   | Expr.Lam {x; tau; e} -> 
-    let lctx = String.Map.add ctx ~key:x ~data:tau in
-    (match lctx with
-    | `Ok lctx -> 
-      typecheck_expr lctx e >>= fun tau_e -> 
-        Ok(Type.Fn{arg = tau; ret = tau_e})
-    | `Duplicate -> Error(
-      Printf.sprintf "Duplicate symbol %s" x)
-    )
+    let lctx = String.Map.set ctx ~key:x ~data:tau in
+    typecheck_expr lctx e >>= fun tau_e -> 
+      Ok(Type.Fn{arg = tau; ret = tau_e})
   
   | Expr.App {lam; arg} ->
     typecheck_expr ctx lam >>= fun tau_lam ->

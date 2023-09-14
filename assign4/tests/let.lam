@@ -1,4 +1,3 @@
 let x : num = 1 in 
-let y : num = 2 in
-let z : num = 3 in
-x + y + z
+let f : num -> num = fun (x : num) -> x in
+f 2
