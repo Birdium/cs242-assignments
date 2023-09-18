@@ -1,0 +1,6 @@
+let x : num = 1 in
+let y : num + bool = inj 5 = L in num + bool in
+case y {
+  L(z) -> z + x
+| R(z) -> 9
+}

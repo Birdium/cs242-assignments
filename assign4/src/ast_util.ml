@@ -176,6 +176,39 @@ module Expr = struct
         left = aux depth left; right = aux depth right}
       | Or {left; right} -> Or {
         left = aux depth left; right = aux depth right}
+      | Var variable -> 
+        let var_opt = String.Map.find depth variable in 
+        (match var_opt with
+        | Some d -> Var(Int.to_string d)
+        | None -> e
+        )
+      | Lam {x; tau; e} -> 
+        let increment_depth map = 
+          String.Map.fold 
+            ~init:String.Map.empty
+            ~f:(fun ~key ~data updated_map -> 
+              let updated_value = data + 1 in 
+              String.Map.set updated_map ~key:key ~data:updated_value)
+            map
+        in
+        let idepth = increment_depth depth in
+        let ndepth = String.Map.set idepth ~key:x ~data:0 in
+        Lam {
+          x = "_";
+          tau = tau;
+          e = aux ndepth e;
+        }
+      | App {lam; arg} -> App {
+        lam = aux depth lam; arg = aux depth arg;
+      } 
+      | Unit -> e
+      | Pair {left; right} -> Pair {
+        left = aux depth left; right = aux depth right;
+      }
+      | Project {e; d} -> Project {
+        e = aux depth e; d;
+      }
+
       | _ -> raise Unimplemented
     in
     aux String.Map.empty e
