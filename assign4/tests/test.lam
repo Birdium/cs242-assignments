@@ -1,8 +1,8 @@
 let n : num = 1 + 2 in
 let n : num = if (n > 1) || (n = 1) then n - 1 else 0 in
-
 let f : num -> num = fun (n : num) -> n + 1 in
 let t : num * bool = (1, true) in
 let n : num = (f (t.L)) in
-
+let s : num + bool = inj false = R as num + bool in
+let n : num = case s { L(n) -> n + 1 | R(b) -> if b then 1 else 0 } in
 n

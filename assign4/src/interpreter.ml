@@ -76,6 +76,14 @@ let rec trystep (e : Expr.t) : outcome =
     | Right -> Step right
     )
 
+  | Expr.Case {e; xleft; eleft; xright; eright} -> 
+    (e, fun e' -> Expr.Case {e = e'; xleft; eleft; xright; eright}) |-> fun () -> 
+    let Expr.Inject {e; d; tau} = e in
+    if d = Left then 
+      Step (Ast_util.Expr.substitute xleft e eleft)
+    else 
+      Step (Ast_util.Expr.substitute xright e eright)
+
   (* Add more cases here! *)
 
   | _ -> raise (RuntimeError (

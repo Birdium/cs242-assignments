@@ -45,6 +45,7 @@ module Type = struct
       } *)
       | Unit -> Unit
       | Product {left; right} -> Product {left; right} 
+      | Sum {left; right} -> Sum {left; right}
       | _ -> 
         (* Printf.printf "%s\n" (to_string tau);  *)
         raise Unimplemented
@@ -152,6 +153,25 @@ module Expr = struct
       e = substitute_map rename e;
       d = d;
     }
+    | Inject {e; d; tau} -> Inject {
+      e = substitute_map rename e;
+      d = d;
+      tau = tau;
+    } 
+    | Case {e; xleft; eleft; xright; eright} -> 
+      let fr_left = fresh xleft in 
+      let fr_right = fresh xright in 
+      let xleft' = Var(fr_left) in 
+      let xright' = Var(fr_right) in 
+      let lrename = String.Map.set rename ~key:xleft ~data:xleft' in 
+      let rrename = String.Map.set rename ~key:xright ~data:xright' in 
+      Case {
+        e = substitute_map rename e;
+        xleft = fr_left;
+        eleft = substitute_map lrename eleft;
+        xright = fr_right;
+        eright = substitute_map rrename eright;
+      }
 
     | _ -> raise Unimplemented
 
@@ -161,6 +181,14 @@ module Expr = struct
 
   let rec to_debruijn (e : t) : t =
     let rec aux (depth : int String.Map.t) (e : t) : t =
+      let increment_depth map = 
+        String.Map.fold 
+          ~init:String.Map.empty
+          ~f:(fun ~key ~data updated_map -> 
+            let updated_value = data + 1 in 
+            String.Map.set updated_map ~key:key ~data:updated_value)
+          map
+      in
       match e with
       | Num _ -> e
       | Binop {binop; left; right} -> Binop {
@@ -183,14 +211,6 @@ module Expr = struct
         | None -> e
         )
       | Lam {x; tau; e} -> 
-        let increment_depth map = 
-          String.Map.fold 
-            ~init:String.Map.empty
-            ~f:(fun ~key ~data updated_map -> 
-              let updated_value = data + 1 in 
-              String.Map.set updated_map ~key:key ~data:updated_value)
-            map
-        in
         let idepth = increment_depth depth in
         let ndepth = String.Map.set idepth ~key:x ~data:0 in
         Lam {
@@ -208,6 +228,20 @@ module Expr = struct
       | Project {e; d} -> Project {
         e = aux depth e; d;
       }
+      | Inject {e; d; tau} -> Inject {
+        e = aux depth e; d; tau;
+      }
+      | Case {e; xleft; eleft; xright; eright} -> 
+        let idepth = increment_depth depth in 
+        let ldepth = String.Map.set idepth ~key:xleft ~data:0 in 
+        let rdepth = String.Map.set idepth ~key:xright ~data:0 in 
+        Case {
+          e = aux depth e;
+          xleft = "_";
+          eleft = aux ldepth eleft;
+          xright = "_";
+          eright = aux rdepth eright;
+        }
 
       | _ -> raise Unimplemented
     in

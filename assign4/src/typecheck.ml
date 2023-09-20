@@ -132,7 +132,41 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
         (Expr.to_string e) (Type.to_string tau_e)
       )
      )
-
+  | Expr.Inject {e; d; tau} -> 
+    typecheck_expr ctx e >>= fun tau_e ->
+    (match tau with
+    | Sum {left; right} when 
+      let inj_tau = 
+        if d = Left then left else right 
+      in 
+      Ast_util.Type.aequiv inj_tau tau_e ->   
+        Ok tau
+    | _ -> Error(
+      Printf.sprintf
+      "Mismatched sum type in expression (%s: %s)" 
+      (Expr.to_string e) (Type.to_string tau_e) ) 
+    ) 
+  | Expr.Case {e; xleft; eleft; xright; eright} -> 
+    typecheck_expr ctx e >>= fun tau_e -> 
+    (match tau_e with
+    | Sum {left; right} ->
+      let lctx = String.Map.set ctx ~key:xleft ~data:left in 
+      let rctx = String.Map.set ctx ~key:xright ~data:right in 
+      typecheck_expr lctx eleft >>= fun tau_eleft -> 
+      typecheck_expr rctx eright >>= fun tau_eright -> 
+      if Ast_util.Type.aequiv tau_eleft tau_eright then
+        Ok tau_eleft
+      else 
+        Error(
+          Printf.sprintf 
+          "Mismatched type in case expression"
+        )
+    | _ -> Error(
+      Printf.sprintf
+      "Case expression (%s: %s) should have sum type"
+      (Expr.to_string e) (Type.to_string tau_e)
+    ) 
+    )
   | _ -> 
     (* Printf.sprintf "%s" (Expr.to_string e);  *)
     raise Unimplemented
