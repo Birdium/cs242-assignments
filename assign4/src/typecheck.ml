@@ -175,7 +175,14 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
       Error(
         Printf.sprintf
         "TODO"
-      ) 
+      )
+  | Expr.TyLam {a; e} -> 
+    typecheck_expr ctx e >>= fun tau_e -> 
+    Ok Type.Forall {a = a; tau = tau_e}
+  | Expr.TyApp {e; tau}
+    typecheck_expr ctx e >>= fun tau_e -> 
+    let Type.Forall {a = a; tau = tau_body} = tau_e in 
+    
   | _ -> 
     (* Printf.sprintf "%s" (Expr.to_string e);  *)
     raise Unimplemented
