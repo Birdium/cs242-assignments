@@ -84,6 +84,9 @@ let rec trystep (e : Expr.t) : outcome =
     else 
       Step (Ast_util.Expr.substitute xright e eright)
 
+  | Expr.Fix {x; tau; e = e'} -> 
+    Step (Ast_util.Expr.substitute x e e')
+
   (* Add more cases here! *)
 
   | _ -> raise (RuntimeError (

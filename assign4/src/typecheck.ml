@@ -164,9 +164,18 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
     | _ -> Error(
       Printf.sprintf
       "Case expression (%s: %s) should have sum type"
-      (Expr.to_string e) (Type.to_string tau_e)
-    ) 
+      (Expr.to_string e) (Type.to_string tau_e)) 
     )
+  | Expr.Fix {x; tau; e} -> 
+    let nctx = String.Map.set ctx ~key:x ~data:tau in 
+    typecheck_expr nctx e >>= fun tau_e -> 
+    if Ast_util.Type.aequiv tau tau_e then 
+      Ok tau
+    else
+      Error(
+        Printf.sprintf
+        "TODO"
+      ) 
   | _ -> 
     (* Printf.sprintf "%s" (Expr.to_string e);  *)
     raise Unimplemented

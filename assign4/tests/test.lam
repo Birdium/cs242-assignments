@@ -1,8 +1,20 @@
+(* Arithmetic, booleans, lets *)
 let n : num = 1 + 2 in
 let n : num = if (n > 1) || (n = 1) then n - 1 else 0 in
+
+(* Functions and pairs *)
 let f : num -> num = fun (n : num) -> n + 1 in
 let t : num * bool = (1, true) in
 let n : num = (f (t.L)) in
+
+(* Sums *)
 let s : num + bool = inj false = R as num + bool in
 let n : num = case s { L(n) -> n + 1 | R(b) -> if b then 1 else 0 } in
+
+(* Fixpoint *)
+letrec fact : num -> num = fun (n : num) ->
+  if n = 0 then 1 else n * (fact (n - 1))
+in
+let n : num = (fact 10) in
+
 n

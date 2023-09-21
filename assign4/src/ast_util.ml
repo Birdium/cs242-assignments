@@ -172,7 +172,13 @@ module Expr = struct
         xright = fr_right;
         eright = substitute_map rrename eright;
       }
-
+    | Fix {x; tau; e} -> 
+      let fr = fresh x in 
+      let x' = Var(fr) in 
+      let nrename = String.Map.set rename ~key:x ~data:x' in 
+      Fix {
+        x = fr; tau = tau; e = substitute_map nrename e;
+      }
     | _ -> raise Unimplemented
 
   let substitute (x : string) (e' : t) (e : t) : t =
@@ -241,6 +247,14 @@ module Expr = struct
           eleft = aux ldepth eleft;
           xright = "_";
           eright = aux rdepth eright;
+        }
+      | Fix {x; tau; e} -> 
+        let idepth = increment_depth depth in
+        let ndepth = String.Map.set idepth ~key:x ~data:0 in
+        Fix {
+          x = "_";
+          tau = tau;
+          e = aux ndepth e;
         }
 
       | _ -> raise Unimplemented
