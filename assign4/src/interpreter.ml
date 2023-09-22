@@ -89,6 +89,12 @@ let rec trystep (e : Expr.t) : outcome =
 
   (* Add more cases here! *)
 
+  | Expr.TyApp {e; tau} -> 
+    (e, fun e' -> Expr.TyApp {e = e'; tau}) |-> fun () -> 
+    let Expr.TyLam {a; e} = e in 
+    Step e 
+
+
   | _ -> raise (RuntimeError (
     Printf.sprintf "Reached a stuck state at expression: %s" (Expr.to_string e)))
 

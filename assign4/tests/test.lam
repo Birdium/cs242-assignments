@@ -15,6 +15,10 @@ let n : num = case s { L(n) -> n + 1 | R(b) -> if b then 1 else 0 } in
 letrec fact : num -> num = fun (n : num) ->
   if n = 0 then 1 else n * (fact (n - 1))
 in
-let n : num = (fact 10) in
+let n : num = (fact 5) in
+
+(* Polymorphic identity *)
+let id : forall a . a -> a = tyfun a -> fun (x : a) -> x in
+let n : num = ((id [num]) 1) in
 
 n

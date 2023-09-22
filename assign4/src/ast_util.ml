@@ -13,6 +13,33 @@ module Type = struct
     | Num -> Num
     (* Add more cases here! *)
     | Bool -> Bool
+    | Unit -> Unit 
+    | Var variable ->
+      let var_opt = String.Map.find rename variable in
+      (match var_opt with
+      | Some var -> var
+      | None -> tau)
+    | Fn {arg; ret} -> Fn {
+      arg = substitute_map rename arg;
+      ret = substitute_map rename ret;
+    }
+    | Product {left; right} -> Product {
+      left = substitute_map rename left;
+      right = substitute_map rename right;
+    }
+    | Sum {left; right} -> Sum {
+      left = substitute_map rename left;
+      right = substitute_map rename right;
+    }
+    | Forall {a; tau} -> 
+      let fr = fresh a in 
+      let a' = Var(fr) in 
+      let nrename = String.Map.set rename ~key:a ~data:a' in 
+      Forall {
+        a = fr;
+        tau = substitute_map nrename tau;
+      }
+
     | _ -> raise Unimplemented
 
   let substitute (x : string) (tau' : t) (tau : t) : t =
@@ -20,11 +47,45 @@ module Type = struct
 
   let rec to_debruijn (tau : t) : t =
     let rec aux (depth : int String.Map.t) (tau : t) : t =
+      let increment_depth map = 
+        String.Map.fold 
+          ~init:String.Map.empty
+          ~f:(fun ~key ~data updated_map -> 
+            let updated_value = data + 1 in 
+            String.Map.set updated_map ~key:key ~data:updated_value)
+          map
+      in
       match tau with
       | Num -> Num
       | Bool -> Bool
+      | Unit -> Unit 
+      | Var variable -> 
+        let var_opt = String.Map.find depth variable in 
+        (match var_opt with 
+        | Some d -> Var(Int.to_string d)
+        | None -> tau
+        )
+      | Fn {arg; ret} -> Fn {
+        arg = aux depth arg;
+        ret = aux depth ret;
+      }
+      | Product {left; right} -> Product {
+        left = aux depth left;
+        right = aux depth right;
+      }
+      | Sum {left; right} -> Sum {
+        left = aux depth left;
+        right = aux depth right;
+      }
+      | Forall {a; tau} -> 
+        let idepth = increment_depth depth in 
+        let ndepth = String.Map.set idepth ~key:a ~data:0 in 
+        Forall {
+          a = "_";
+          tau = aux ndepth tau
+        }
       (* Add more cases here! *)
-      | Fn x -> Fn x
+      (* | Fn x -> Fn x *)
       (* | Var x ->
         try 
           let d = String.Map.find depth x in
@@ -179,6 +240,16 @@ module Expr = struct
       Fix {
         x = fr; tau = tau; e = substitute_map nrename e;
       }
+    | TyLam {a; e} -> 
+      let fr = fresh a in
+      let a' = Var(fr) in
+      let nrename = String.Map.set rename ~key:a ~data:a' in
+      let new_e = substitute_map nrename e in
+      TyLam {a = fr; e = new_e}
+    | TyApp {e; tau} -> TyApp {
+      e = substitute_map rename e; tau
+    }
+
     | _ -> raise Unimplemented
 
   let substitute (x : string) (e' : t) (e : t) : t =
@@ -256,6 +327,17 @@ module Expr = struct
           tau = tau;
           e = aux ndepth e;
         }
+      | TyLam {a; e} -> 
+        let idepth = increment_depth depth in
+        let ndepth = String.Map.set idepth ~key:a ~data:0 in
+        TyLam {
+          a = "_";
+          e = aux ndepth e;
+        }
+      | TyApp {e; tau} -> TyApp {
+        e = aux depth e; tau
+      }
+
 
       | _ -> raise Unimplemented
     in
