@@ -183,6 +183,27 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
     typecheck_expr ctx e >>= fun tau_e -> 
     let Type.Forall {a = a; tau = tau_body} = tau_e in 
     Ok (Ast_util.Type.substitute a tau tau_body)
+  | Expr.Fold_ {e; tau} -> 
+    typecheck_expr ctx e >>= fun tau_e -> 
+    (match tau with 
+    | Type.Rec {a; tau = tau'} ->
+      let tau_e' = Ast_util.Type.substitute a tau tau' in 
+      if Ast_util.Type.aequiv tau_e tau_e' then Ok (tau)
+      else Error(
+        Printf.sprintf
+        "TODO"
+      ) 
+    | _ -> Error(
+      Printf.sprintf
+      "TODO"))
+  | Expr.Unfold e -> 
+    typecheck_expr ctx e >>= fun tau_e -> 
+    (match tau_e with 
+    | Type.Rec {a; tau} -> 
+      Ok (Ast_util.Type.substitute a tau_e tau)
+    | _ -> Error(
+      Printf.sprintf
+      "TODO"))
   | _ -> 
     (* Printf.sprintf "%s" (Expr.to_string e);  *)
     raise Unimplemented

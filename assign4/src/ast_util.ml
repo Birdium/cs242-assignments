@@ -31,6 +31,14 @@ module Type = struct
       left = substitute_map rename left;
       right = substitute_map rename right;
     }
+    | Rec {a; tau} -> 
+      let fr = fresh a in 
+      let a' = Var(fr) in 
+      let nrename = String.Map.set rename ~key:a ~data:a' in 
+      Rec {
+        a = fr;
+        tau = substitute_map nrename tau;
+      }
     | Forall {a; tau} -> 
       let fr = fresh a in 
       let a' = Var(fr) in 
@@ -77,6 +85,13 @@ module Type = struct
         left = aux depth left;
         right = aux depth right;
       }
+      | Rec {a; tau} -> 
+        let idepth = increment_depth depth in 
+        let ndepth = String.Map.set idepth ~key:a ~data:0 in 
+        Rec {
+          a = "_";
+          tau = aux ndepth tau
+        }
       | Forall {a; tau} -> 
         let idepth = increment_depth depth in 
         let ndepth = String.Map.set idepth ~key:a ~data:0 in 
@@ -85,28 +100,6 @@ module Type = struct
           tau = aux ndepth tau
         }
       (* Add more cases here! *)
-      (* | Fn x -> Fn x *)
-      (* | Var x ->
-        try 
-          let d = String.Map.find depth x in
-          Var (Int.to_string d)
-        with
-        | Not_found -> Var x 
-      | Fn x -> Fn {
-        let increment_depth map = 
-          String.Map.fold
-          ~init:String.Map.empty
-          ~f:(fun key value updated_map -> 
-            let updated_value = value + 1 in
-            String.Map.add updated_map ~key ~data:updated_value) 
-          map 
-        in  
-        let incremented_map = increment_depth depth in 
-        String.Map.set increment_depth ~key:x ~data:x.arg
-      } *)
-      | Unit -> Unit
-      | Product {left; right} -> Product {left; right} 
-      | Sum {left; right} -> Sum {left; right}
       | _ -> 
         (* Printf.printf "%s\n" (to_string tau);  *)
         raise Unimplemented
@@ -249,6 +242,10 @@ module Expr = struct
     | TyApp {e; tau} -> TyApp {
       e = substitute_map rename e; tau
     }
+    | Fold_ {e; tau} -> Fold_ {
+      e = substitute_map rename e; tau
+    }
+    | Unfold e -> Unfold (substitute_map rename e)
 
     | _ -> raise Unimplemented
 
@@ -337,7 +334,10 @@ module Expr = struct
       | TyApp {e; tau} -> TyApp {
         e = aux depth e; tau
       }
-
+      | Fold_ {e; tau} -> Fold_ {
+        e = aux depth e; tau
+      }
+      | Unfold e -> Unfold (aux depth e)
 
       | _ -> raise Unimplemented
     in
