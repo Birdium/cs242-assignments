@@ -47,6 +47,15 @@ module Type = struct
         a = fr;
         tau = substitute_map nrename tau;
       }
+      
+    | Exists {a; tau} -> 
+      let fr = fresh a in 
+      let a' = Var(fr) in 
+      let nrename = String.Map.set rename ~key:a ~data:a' in 
+      Exists {
+        a = fr;
+        tau = substitute_map nrename tau;
+      }
 
     | _ -> raise Unimplemented
 
@@ -96,6 +105,13 @@ module Type = struct
         let idepth = increment_depth depth in 
         let ndepth = String.Map.set idepth ~key:a ~data:0 in 
         Forall {
+          a = "_";
+          tau = aux ndepth tau
+        }
+      | Exists {a; tau} -> 
+        let idepth = increment_depth depth in 
+        let ndepth = String.Map.set idepth ~key:a ~data:0 in 
+        Exists {
           a = "_";
           tau = aux ndepth tau
         }
@@ -246,6 +262,18 @@ module Expr = struct
       e = substitute_map rename e; tau
     }
     | Unfold e -> Unfold (substitute_map rename e)
+    | Export {e; tau_adt; tau_mod} -> Export {
+      e = substitute_map rename e; tau_adt; tau_mod;
+    }
+    | Import {x; a; e_mod; e_body} -> 
+      let fr = fresh x in 
+      let x' = Var(fr) in 
+      let nrename = String.Map.set rename ~key:x ~data:x' in 
+      Import {
+        x = fr; a;
+        e_mod = substitute_map rename e_mod;
+        e_body = substitute_map nrename e_body;      
+      }
 
     | _ -> raise Unimplemented
 
@@ -338,6 +366,18 @@ module Expr = struct
         e = aux depth e; tau
       }
       | Unfold e -> Unfold (aux depth e)
+      | Export {e; tau_adt; tau_mod} -> Export {
+        e = aux depth e; tau_adt; tau_mod;
+      }
+      | Import {x; a; e_mod; e_body} -> 
+        let idepth = increment_depth depth in 
+        let xdepth = String.Map.set idepth ~key:x ~data:0 in 
+        Import {
+          x = "_";
+          a = "_";
+          e_mod = aux depth e_mod;
+          e_body = aux xdepth e_body;
+        }
 
       | _ -> raise Unimplemented
     in

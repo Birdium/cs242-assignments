@@ -174,7 +174,7 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
     else
       Error(
         Printf.sprintf
-        "TODO"
+        "FIX"
       )
   | Expr.TyLam {a; e} -> 
     typecheck_expr ctx e >>= fun tau_e -> 
@@ -191,11 +191,11 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
       if Ast_util.Type.aequiv tau_e tau_e' then Ok (tau)
       else Error(
         Printf.sprintf
-        "TODO"
+        "FOLD"
       ) 
     | _ -> Error(
       Printf.sprintf
-      "TODO"))
+      "FOLD"))
   | Expr.Unfold e -> 
     typecheck_expr ctx e >>= fun tau_e -> 
     (match tau_e with 
@@ -203,7 +203,25 @@ let rec typecheck_expr (ctx : Type.t String.Map.t) (e : Expr.t)
       Ok (Ast_util.Type.substitute a tau_e tau)
     | _ -> Error(
       Printf.sprintf
-      "TODO"))
+      "unfold: bad type %s"
+      (Type.to_string tau_e)))
+  | Expr.Export {e; tau_adt; tau_mod} -> 
+    typecheck_expr ctx e >>= fun tau_e ->
+    (match tau_mod with 
+    | Exists {a; tau} -> 
+      let tau_e' = Ast_util.Type.substitute a tau_adt tau in 
+      if Ast_util.Type.aequiv tau_e tau_e' then Ok tau_mod
+      else Error(Printf.sprintf "Export") 
+    | _ -> Error(Printf.sprintf "Export")) 
+  | Expr.Import {x; a; e_mod; e_body} -> 
+    typecheck_expr ctx e_mod >>= fun tau_mod -> 
+    (match tau_mod with 
+    | Exists {a = b; tau} -> 
+      let xtype = Ast_util.Type.substitute b (Var(a)) tau in 
+      let nctx = String.Map.set ctx ~key:x ~data:xtype in 
+      typecheck_expr nctx e_body >>= fun tau_body ->
+      Ok tau_body 
+    | _ -> Error(Printf.sprintf "Import"))
   | _ -> 
     (* Printf.sprintf "%s" (Expr.to_string e);  *)
     raise Unimplemented

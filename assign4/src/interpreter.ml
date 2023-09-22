@@ -99,6 +99,10 @@ let rec trystep (e : Expr.t) : outcome =
     let Expr.Fold_ {e; tau} = e in 
     Step e
 
+  | Expr.Import {x; a; e_mod; e_body} -> 
+    (e_mod, fun e_mod' -> Expr.Import {e_mod = e_mod'; x; a; e_body}) |-> fun () ->
+    let Expr.Export {e; tau_adt; tau_mod} = e_mod in 
+    Step (Ast_util.Expr.substitute x e e_body) 
 
   | _ -> raise (RuntimeError (
     Printf.sprintf "Reached a stuck state at expression: %s" (Expr.to_string e)))
